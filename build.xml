@@ -1,0 +1,89 @@
+<project name="grafoui" default="all" basedir=".">
+  <description>
+    An example on how integrate QT within R (via Rcpp) and not using a wrapper for QT inside R
+  </description>
+  
+  <property environment="env"/>
+  <!-- It's important to have set the R_HOME to build correctly -->  
+  <property name="R_HOME" value="${env.R_HOME}" />
+  <property name="R_EXEC" value="${R_HOME}/bin/R" />  
+  <property name="qtsrc" location="qtsrc"/>  
+  <property name="src" location="src"/>
+
+  <condition property="isWindows">
+    <os family="windows" />
+  </condition>
+  
+  <condition property="isUnix">
+    <os family="unix" />
+  </condition>
+
+  <condition property="LIB_FILE" value="lib${ant.project.name}.so">
+    <isset property="isLinux"/>
+  </condition>
+
+  <condition property="LIB_FILE" value="${ant.project.name}.dll">
+    <isset property="isWindows" />
+  </condition>
+  
+  <target name="rcheck">
+    <echo message="${os.name}, ${os.arch}, ${sun.arch.data.model}" /> 
+    <exec executable="${R_EXEC}" failonerror="true">     
+      <arg value="CMD"/>
+      <arg value="check"/>
+      <arg value="."/>
+    </exec>
+  </target>
+ 
+
+  <target name="all" depends="rdeploy" />
+
+  <target name="rbuild" depends="rcheck">
+    <exec executable="${R_EXEC}" failonerror="true">
+      <arg value="CMD"/>
+      <arg value="build"/>
+      <arg value="."/>
+    </exec>        
+  </target>
+
+  <target name="rinstall" depends="rbuild">
+    <exec executable="${R_EXEC}" dir="${basedir}/.." failonerror="true">
+      <arg value="CMD"/>
+      <arg value="INSTALL"/>
+      <arg value="${ant.project.name}"/>
+    </exec>    
+  </target>  
+
+  <target name="qmake" depends="rinstall">
+    <echo message="${qtsrc}" />
+    <exec executable="qmake" dir="${qtsrc}" failonerror="true" />       
+  </target>
+
+  <target name="make" depends="qmake">
+    <exec executable="make" dir="${qtsrc}" failonerror="true" />       
+  </target>
+ 
+  <target name="rdeploy" depends="make">
+    <echo message="Copio ${qtsrc}/debug/${LIB_FILE} in ${R_HOME}/library/${ant.project.name}/libs/i386"/>
+    <copy file="${qtsrc}/debug/${LIB_FILE}" todir="${R_HOME}/library/${ant.project.name}/libs/i386" overwrite="true" force="true" />    
+  </target>
+ 
+  <target name="uninstall">
+    <exec executable="${R_EXEC}">
+      <arg value="CMD"/>
+      <arg value="REMOVE"/>
+      <arg value="${ant.project.name}"/>
+    </exec>   
+  </target>  
+  
+  <target name="clean">
+    <delete dir="${qtsrc}/debug" />
+    <delete dir="${qtsrc}/release" />
+    <delete dir="..Rcheck" />
+    <delete>
+        <fileset dir="${src}" includes="**/*.o"/> 
+        <fileset dir="${src}" includes="**/*.dll"/>         
+    </delete>
+  </target>  
+  
+</project>
