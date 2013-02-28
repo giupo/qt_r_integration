@@ -1,1 +1,5 @@
 ..Rcheck
+.Rhistory
+*/*.so
+*.tar.gz
+*.Rcheck/*
